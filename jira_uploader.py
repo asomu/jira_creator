@@ -1,21 +1,24 @@
 # pip install pyqt5
-
 from PyQt5.QtWidgets import *
 from PyQt5 import uic, QtGui
 from PyQt5.QtCore import Qt, QThread, pyqtSlot, pyqtSignal
-from PyQt5.QtGui import QIcon
 import csv
 from jira import JIRA
 import logging
 from datetime import datetime
 import os
 import sys
-import time
+
 
 # PREFIX
 URL = 'http://jira.lxsemicon.com/'
 QT_UI = "./JIRA_uploader.ui"
+project_file_name = "project.ini"
 DISPLAY_LOG_IN_TERMNINAL = True
+
+project_list = { "SW08009_dxtest_DV2_regression_PDM":"SWDXDRP"}
+table_fiedls = ["project" , "Issue Type", "Label", "Summary", "Component/s", "Assignee", "expected", "Description", "Reporter"]
+issue_fiedls = ["project" , "issuetype", "labels", "summary", "components", "assignee", "customfield_10836", "description", "reporter"]
 
 # logger
 logger = logging.getLogger('MyLogger')
@@ -42,11 +45,6 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
-
-project_list = { "SW08009_dxtest_DV2_regression_PDM":"SWDXDRP"}
-table_fiedls = ["project" , "Issue Type", "Label", "Summary", "Component/s", "Assignee", "expected", "Description", "Reporter"]
-issue_fiedls = ["project" , "issuetype", "labels", "summary", "components", "assignee", "customfield_10836", "description", "reporter"]
-
 class MainDialog(QDialog):
     def __init__(self, fn=None ,parent=None):
         # Display minimize, close button
@@ -55,6 +53,8 @@ class MainDialog(QDialog):
         self.jira = None
         self.tableWidgetInit()
         self.jira_create_thread = None
+        self.project_items = []
+        self.show()
 
     def initUI(self):
         uic.loadUi(QT_UI, self)
@@ -62,7 +62,15 @@ class MainDialog(QDialog):
         self.btn_open.clicked.connect(self.open_file)
         self.btn_create_jira_issue.clicked.connect(self.create_jira_issue)
         # For JIRA Login
-        self.combo_project.addItem('SW08009_dxtest_DV2_regression_PDM')
+
+        if os.path.isfile(project_file_name):
+            with open(project_file_name, 'r') as f:
+                self.project_items = f.read().split("\n")
+                self.add_log(f'{project_file_name} load success.')
+        else:
+            self.add_log(f'{project_file_name} load fail please check {project_file_name}.')
+        for item in self.project_items:
+            self.combo_project.addItem(item.strip())
 
     def tableWidgetInit(self):
         self.tableWidget.setColumnCount(9)
@@ -96,7 +104,7 @@ class MainDialog(QDialog):
     def trans_jira_type(self, line):
         data = []
         project_key = self.combo_project.currentText()
-        data.append(project_list[project_key])
+        data.append(project_key)
         data.append(line[0])
         data.append(line[1])
         data.append(line[2])
@@ -123,15 +131,18 @@ class MainDialog(QDialog):
         return data
 
     def open_csv(self, name):
-        with open(name, 'r', encoding="utf-8") as f:
-            rdf = csv.reader(f)
-            upload_datas = []
-            for i, line in enumerate(rdf):
-                if i == 0 or line[9] == "Closed":
-                    continue
-                d = self.trans_jira_type(line)
-                upload_datas.append(d)
-            return upload_datas
+        try:
+            with open(name, 'r', encoding="utf-8") as f:
+                rdf = csv.reader(f)
+                upload_datas = []
+                for i, line in enumerate(rdf):
+                    if i == 0 or line[9] == "Closed":
+                        continue
+                    d = self.trans_jira_type(line)
+                    upload_datas.append(d)
+                return upload_datas
+        except Exception as e:
+            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
 
     def add_table(self, idx, data):
         for j, value in enumerate(data):
@@ -146,6 +157,7 @@ class MainDialog(QDialog):
                 self.tableWidget.setRowCount(len(datas))
                 for idx, data in enumerate(datas):
                     self.add_table(idx, data)
+                self.btn_create_jira_issue.setEnabled(True)
 
         except Exception as e:
             print('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
