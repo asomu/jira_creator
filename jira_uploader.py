@@ -14,9 +14,10 @@ import time
 
 # PREFIX
 URL = 'http://jira.lxsemicon.com/'
-
+QT_UI = "./JIRA_uploader.ui"
 DISPLAY_LOG_IN_TERMNINAL = True
 
+# logger
 logger = logging.getLogger('MyLogger')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s (%(funcName)20s:%(lineno)4d) [%(levelname)s]: %(message)s')
@@ -52,44 +53,44 @@ class MainDialog(QDialog):
         super(MainDialog, self).__init__(parent, flags=Qt.WindowMinimizeButtonHint |Qt.WindowCloseButtonHint)
         self.initUI()
         self.jira = None
+        self.tableWidgetInit()
+        self.jira_create_thread = None
 
     def initUI(self):
-        uic.loadUi("./JIRA_uploader.ui", self)
+        uic.loadUi(QT_UI, self)
         self.btn_login.clicked.connect(self.connect_jira)
         self.btn_open.clicked.connect(self.open_file)
         self.btn_create_jira_issue.clicked.connect(self.create_jira_issue)
         # For JIRA Login
         self.combo_project.addItem('SW08009_dxtest_DV2_regression_PDM')
 
-    ###########################################################################################
-    # Table widget
-        self.tableWidget.setRowCount(1)
+    def tableWidgetInit(self):
         self.tableWidget.setColumnCount(9)
+        self.tableWidget.setHorizontalHeaderLabels(table_fiedls)
+        self.tableWidget.setRowCount(1)
         self.tableWidget.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        for j, col in enumerate(table_fiedls):
-            self.tableWidget.setItem(0, j, QTableWidgetItem(col))
 
     def create_jira_issue(self):
         try:
             data = []
-            for row in range(self.tableWidget.rowCount()-1):
+            for row in range(self.tableWidget.rowCount()):
                 item = []
                 for column in range(self.tableWidget.columnCount()):
-                    if self.tableWidget.item(row+1, column).text() == None:
+                    if self.tableWidget.item(row, column).text() == None:
                         item.append("")
                     else:
-                        item.append(self.tableWidget.item(row+1, column).text())
+                        item.append(self.tableWidget.item(row, column).text())
                 upload_item = self.parse_csv(item)
                 data.append(upload_item)
             if self.jira == None:
                 self.add_log('Please connect Jira!')
             else:
-                for idx, item in enumerate(data):
-                    issues = self.jira.create_issue(fields=item)
-                    self.add_log(f"{idx+1} item Upload SUCCESS")
+                self.jira_create_thread = CreateThread(self.jira, data)
+                self.jira_create_thread.logSignal.connect(self.add_log)
+                self.jira_create_thread.finished.connect(self.finish_thread)
+                self.jira_create_thread.start()
         except Exception as e:
-            print('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
             self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
 
     def trans_jira_type(self, line):
@@ -134,7 +135,7 @@ class MainDialog(QDialog):
 
     def add_table(self, idx, data):
         for j, value in enumerate(data):
-            self.tableWidget.setItem(idx + 1, j, QTableWidgetItem(value))
+            self.tableWidget.setItem(idx, j, QTableWidgetItem(value))
 
     def open_file(self):
         try:
@@ -142,7 +143,7 @@ class MainDialog(QDialog):
             if fname[0]:
                 self.line_edit_csv.setText(fname[0])
                 datas = self.open_csv(fname[0])
-                self.tableWidget.setRowCount(len(datas)+1)
+                self.tableWidget.setRowCount(len(datas))
                 for idx, data in enumerate(datas):
                     self.add_table(idx, data)
 
@@ -161,18 +162,8 @@ class MainDialog(QDialog):
             self.label_status.setStyleSheet("Color : green")
         except Exception as e:
             self.add_log('Login File, Check ID or PASSWORD!')
-
     ###########################################################################################
     # Signal pyqtslot
-    @pyqtSlot(int)
-    def count(self, count):
-        self.add_log('ProgressBar Value: %s' % count)
-        self.progressBar.setValue(count)
-
-    @pyqtSlot()
-    def thread_is_stopped(self):
-        self.set_enable_buttons(True)
-
     @pyqtSlot(str)
     def add_log(self, message):
         now = datetime.now()
@@ -181,6 +172,35 @@ class MainDialog(QDialog):
         self.tb_log.append(log_message)
         logger.info(message)
 
+    @pyqtSlot()
+    def finish_thread(self):
+        self.btn_create_jira_issue.setEnabled(False)
+
+###########################################################################################
+# Create Thread class
+class CreateThread(QThread):
+    logSignal = pyqtSignal(str)
+    finished = pyqtSignal()
+
+    def __init__(self, jira_ins, data):
+        super(self.__class__, self).__init__()
+        self.jira_ins = jira_ins
+        self.data = data
+        self.isRunning = True
+
+    def run(self):
+        try:
+            self.logSignal.emit("Start JIRA issue create")
+            for idx, item in enumerate(self.data):
+                self.sleep(1)
+                issue = self.jira_ins.create_issue(fields=item)
+                self.sleep(1)
+                self.logSignal.emit(f"{issue.key} is Created")
+            self.logSignal.emit("Finish JIRA issue create")
+            self.finished.emit()
+        except Exception as e:
+            print('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            self.logSignal.emit('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
