@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>JIRA issue Creator</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>DV-2.png</normaloff>DV-2.png</iconset>
+  </property>
   <widget class="QGroupBox" name="groupBox">
    <property name="geometry">
     <rect>
