@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>859</width>
-    <height>771</height>
+    <width>867</width>
+    <height>873</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>560</y>
+     <y>667</y>
      <width>831</width>
      <height>201</height>
     </rect>
@@ -224,7 +224,7 @@
      <x>20</x>
      <y>130</y>
      <width>831</width>
-     <height>421</height>
+     <height>401</height>
     </rect>
    </property>
    <property name="title">
@@ -236,7 +236,30 @@
       <x>10</x>
       <y>20</y>
       <width>811</width>
-      <height>391</height>
+      <height>371</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QGroupBox" name="groupBox_5">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>540</y>
+     <width>831</width>
+     <height>121</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Update List</string>
+   </property>
+   <widget class="QTableWidget" name="tableWidget_update">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>811</width>
+      <height>91</height>
      </rect>
     </property>
    </widget>

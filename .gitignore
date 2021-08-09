@@ -1,6 +1,7 @@
 .idea/
 *.csv
 *.log
+*.spec
 build
 dist
 __pycache__
