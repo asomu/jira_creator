@@ -16,15 +16,18 @@ QT_UI = "./JIRA_uploader.ui"
 project_file_name = "project.ini"
 DISPLAY_LOG_IN_TERMNINAL = True
 
-project_list = {"SW08009_dxtest_DV2_regression_PDM":"SWDXDRP"}
-table_fiedls = ["Delete", "Project", "Issue Type", "Label", "Summary", "Component/s", "Assignee", "Expected", "Description", "Reporter"]
-update_table_fiedls = ["Delete", "JIRA ID" , "Status", "Comment"]
-issue_fiedls = ["project", "issuetype", "labels", "summary", "components", "assignee", "customfield_10836", "description", "reporter"]
+project_list = {"SW08009_dxtest_DV2_regression_PDM": "SWDXDRP"}
+table_fiedls = ["Delete", "Project", "Issue Type", "Label", "Summary",
+                "Component/s", "Assignee", "Expected", "Description", "Reporter"]
+update_table_fiedls = ["Delete", "JIRA ID", "Status", "Comment"]
+issue_fiedls = ["project", "issuetype", "labels", "summary", "components",
+                "assignee", "customfield_10836", "description", "reporter"]
 
 # logger
 logger = logging.getLogger('MyLogger')
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s (%(funcName)20s:%(lineno)4d) [%(levelname)s]: %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s (%(funcName)20s:%(lineno)4d) [%(levelname)s]: %(message)s')
 
 # Print in terminal
 if DISPLAY_LOG_IN_TERMNINAL:
@@ -46,10 +49,12 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
+
 class MainDialog(QDialog):
-    def __init__(self, fn=None ,parent=None):
+    def __init__(self, fn=None, parent=None):
         # Display minimize, close button
-        super(MainDialog, self).__init__(parent, flags=Qt.WindowMinimizeButtonHint |Qt.WindowCloseButtonHint)
+        super(MainDialog, self).__init__(
+            parent, flags=Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint)
         self.init_ui()
         self.jira = None
         self.update_list = []
@@ -70,7 +75,8 @@ class MainDialog(QDialog):
                 self.project_items = f.read().split("\n")
                 self.add_log(f'{project_file_name} load success.')
         else:
-            self.add_log(f'{project_file_name} load fail please check {project_file_name}.')
+            self.add_log(
+                f'{project_file_name} load fail please check {project_file_name}.')
         for item in self.project_items:
             self.combo_project.addItem(item.strip())
 
@@ -80,13 +86,16 @@ class MainDialog(QDialog):
         self.tableWidget.setHorizontalHeaderLabels(table_fiedls)
         self.tableWidget.setRowCount(1)
         self.tableWidget.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeToContents)
         # update list init
         self.tableWidget_update.setColumnCount(4)
-        self.tableWidget_update.setHorizontalHeaderLabels(table_fiedls)
+        self.tableWidget_update.setHorizontalHeaderLabels(update_table_fiedls)
         self.tableWidget_update.setRowCount(1)
-        self.tableWidget_update.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.tableWidget_update.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.tableWidget_update.setEditTriggers(
+            QAbstractItemView.DoubleClicked)
+        self.tableWidget_update.horizontalHeader(
+        ).setSectionResizeMode(QHeaderView.ResizeToContents)
 
     def create_jira_issue(self):
         try:
@@ -103,12 +112,14 @@ class MainDialog(QDialog):
             if self.jira == None:
                 self.add_log('Please connect Jira!')
             else:
-                self.jira_create_thread = CreateThread(self.jira, data, self.update_list)
+                self.jira_create_thread = CreateThread(
+                    self.jira, data, self.update_list)
                 self.jira_create_thread.logSignal.connect(self.add_log)
                 self.jira_create_thread.finished.connect(self.finish_thread)
                 self.jira_create_thread.start()
         except Exception as e:
-            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            self.add_log('--> Exception is "%s" (Line: %s)' %
+                         (e, sys.exc_info()[-1].tb_lineno))
 
     def trans_jira_type(self, line):
         data = []
@@ -119,7 +130,7 @@ class MainDialog(QDialog):
         data.append(line[2])
         data.append(line[4])
         data.append(line[6])
-        data.append(line[12].replace(".","-"))
+        data.append(line[12].replace(".", "-"))
         data.append(line[14])
         data.append(line[15])
         return data
@@ -139,7 +150,8 @@ class MainDialog(QDialog):
             data["reporter"] = {'name': upload_item[8]}
             return data
         except Exception as e:
-            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            self.add_log('--> Exception is "%s" (Line: %s)' %
+                         (e, sys.exc_info()[-1].tb_lineno))
 
     def add_update_list(self, line):
         data = []
@@ -147,7 +159,6 @@ class MainDialog(QDialog):
         data.append(line[9])
         data.append(line[10])
         self.update_list.append(data)
-
 
     def open_csv(self, name):
         try:
@@ -164,7 +175,8 @@ class MainDialog(QDialog):
                         upload_datas.append(d)
                 return upload_datas
         except Exception as e:
-            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            self.add_log('--> Exception is "%s" (Line: %s)' %
+                         (e, sys.exc_info()[-1].tb_lineno))
 
     def add_table(self, idx, data):
         try:
@@ -174,7 +186,8 @@ class MainDialog(QDialog):
                 self.tableWidget.setCellWidget(idx, 0, item_widget)
                 self.tableWidget.setItem(idx, j+1, QTableWidgetItem(value))
         except Exception as e:
-            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            self.add_log('--> Exception is "%s" (Line: %s)' %
+                         (e, sys.exc_info()[-1].tb_lineno))
 
     def add_update_table(self, idx, data):
         try:
@@ -182,13 +195,16 @@ class MainDialog(QDialog):
             item_widget.clicked.connect(self.del_update_table_row)
             for j, value in enumerate(data):
                 self.tableWidget_update.setCellWidget(idx, 0, item_widget)
-                self.tableWidget_update.setItem(idx, j+1, QTableWidgetItem(value))
+                self.tableWidget_update.setItem(
+                    idx, j+1, QTableWidgetItem(value))
         except Exception as e:
-            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            self.add_log('--> Exception is "%s" (Line: %s)' %
+                         (e, sys.exc_info()[-1].tb_lineno))
 
     def open_file(self):
         try:
-            fname = QFileDialog.getOpenFileName(self, 'Open file', './', 'CSV File(*.csv);;All file(*)')
+            fname = QFileDialog.getOpenFileName(
+                self, 'Open file', './', 'CSV File(*.csv);;All file(*)')
             self.update_list.clear()
             if fname[0]:
                 self.line_edit_csv.setText(fname[0])
@@ -202,8 +218,10 @@ class MainDialog(QDialog):
                 self.btn_create_jira_issue.setEnabled(True)
 
         except Exception as e:
-            print('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
-            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            print('--> Exception is "%s" (Line: %s)' %
+                  (e, sys.exc_info()[-1].tb_lineno))
+            self.add_log('--> Exception is "%s" (Line: %s)' %
+                         (e, sys.exc_info()[-1].tb_lineno))
 
     def connect_jira(self):
         try:
@@ -212,12 +230,13 @@ class MainDialog(QDialog):
             self.jira = JIRA(server=URL, basic_auth=(id, pw))
             self.add_log('Login SUCCESS!')
             self.label_status.setText("Connect")
-            self.label_status.setFont(QtGui.QFont("궁서",14))
+            self.label_status.setFont(QtGui.QFont("궁서", 14))
             self.label_status.setStyleSheet("Color : green")
         except Exception as e:
             self.add_log('Login File, Check ID or PASSWORD!')
     ###########################################################################################
     # Signal pyqtslot
+
     @pyqtSlot(str)
     def add_log(self, message):
         now = datetime.now()
@@ -239,7 +258,8 @@ class MainDialog(QDialog):
                 self.tableWidget.removeRow(index.row())
                 print(index.row(), index.column())
         except Exception as e:
-            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            self.add_log('--> Exception is "%s" (Line: %s)' %
+                         (e, sys.exc_info()[-1].tb_lineno))
 
     @pyqtSlot()
     def del_update_table_row(self):
@@ -250,10 +270,13 @@ class MainDialog(QDialog):
                 self.tableWidget_update.removeRow(index.row())
                 print(index.row(), index.column())
         except Exception as e:
-            self.add_log('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            self.add_log('--> Exception is "%s" (Line: %s)' %
+                         (e, sys.exc_info()[-1].tb_lineno))
 
 ###########################################################################################
 # Create Thread class
+
+
 class CreateThread(QThread):
     logSignal = pyqtSignal(str)
     finished = pyqtSignal()
@@ -277,7 +300,7 @@ class CreateThread(QThread):
             self.logSignal.emit("Update JIRA Status")
             for idx, item in enumerate(self.update_list):
                 self.sleep(1)
-                #update
+                # update
                 self.jira_ins.add_comment(item[0], item[2])
                 self.jira_ins.transition_issue(item[0], item[1])
                 self.sleep(1)
@@ -285,8 +308,11 @@ class CreateThread(QThread):
             self.logSignal.emit("Finish Updating")
             self.finished.emit()
         except Exception as e:
-            print('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
-            self.logSignal.emit('--> Exception is "%s" (Line: %s)' % (e, sys.exc_info()[-1].tb_lineno))
+            print('--> Exception is "%s" (Line: %s)' %
+                  (e, sys.exc_info()[-1].tb_lineno))
+            self.logSignal.emit('--> Exception is "%s" (Line: %s)' %
+                                (e, sys.exc_info()[-1].tb_lineno))
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
